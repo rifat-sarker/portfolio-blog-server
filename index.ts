@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Collection } from "mongodb";
+import { Collection, ObjectId } from "mongodb";
 
 require("dotenv").config();
 const express = require("express");
@@ -62,6 +62,32 @@ async function run() {
         const result = await projectsCollection.find().toArray();
         console.log(result);
         res.status(200).json(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    });
+
+    // update projects
+    app.patch("/api/projects/:id", async (req: Request, res: Response) => {
+      try {
+        const id = req.params.id;
+        const updatedProject = req.body;
+
+        if (!updatedProject || Object.keys(updatedProject).length === 0) {
+          return res.status(400).json({ message: "No update data provided" });
+        }
+
+        const result = await projectsCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updatedProject, $currentDate: { lastModified: true } }
+        );
+        
+        if (result.modifiedCount > 0) {
+          res.status(200).json({ message: "Project updated successfully" });
+        } else {
+          res.status(404).json({ message: "Project not found or no changes" });
+        }
       } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Internal server error" });
