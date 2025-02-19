@@ -42,7 +42,7 @@ async function run() {
     const collection = db.collection("users");
     const projectsCollection: Collection<Project> = db.collection("projects");
 
-    // project crud operation
+    // projects crud operation
     // create project
     app.post("/api/projects", async (req: Request, res: Response) => {
       try {
@@ -51,6 +51,7 @@ async function run() {
         const result = await projectsCollection.insertOne(project);
         if (result.acknowledged) {
           res.status(201).json({
+            success: true,
             message: "Project created successfully",
             id: result.insertedId,
           });
@@ -66,12 +67,18 @@ async function run() {
     //get projects
     app.get("/api/projects", async (req: Request, res: Response) => {
       try {
-        const result = await projectsCollection.find().toArray();
-        console.log(result);
-        res.status(200).json(result);
+        const projects = await projectsCollection.find().toArray();
+
+        res.status(200).json({
+          success: true,
+          message: "Projects fetched successfully",
+          data: projects,
+        });
       } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Internal server error" });
+        res
+          .status(500)
+          .json({ success: false, message: "Internal server error" });
       }
     });
 
@@ -101,6 +108,39 @@ async function run() {
       }
     });
 
+    // delete projects
+    app.delete("/api/projects/:id", async (req: Request, res: Response) => {
+      try {
+        const id = req.params.id;
+
+        // Check if ID is valid
+        if (!ObjectId.isValid(id)) {
+          return res
+            .status(400)
+            .json({ success: false, message: "Invalid project ID" });
+        }
+
+        const result = await projectsCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+
+        if (result.deletedCount > 0) {
+          res
+            .status(200)
+            .json({ success: true, message: "Project deleted successfully" });
+        } else {
+          res
+            .status(404)
+            .json({ success: false, message: "Project not found" });
+        }
+      } catch (error) {
+        console.error(error);
+        res
+          .status(500)
+          .json({ success: false, message: "Internal server error" });
+      }
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
@@ -113,7 +153,7 @@ async function run() {
 }
 run().catch(console.dir);
 
-app.get("/", (req, res) => {
+app.get("/", (req: Request, res: Response) => {
   res.send("Hello World!");
 });
 
