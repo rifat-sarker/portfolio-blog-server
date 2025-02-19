@@ -46,10 +46,17 @@ async function run() {
     // create project
     app.post("/api/projects", async (req: Request, res: Response) => {
       try {
-        const project = req.body;
+        const project = { ...req.body, createdAt: new Date() };
         console.log(project);
         const result = await projectsCollection.insertOne(project);
-        res.status(201).json(result);
+        if (result.acknowledged) {
+          res.status(201).json({
+            message: "Project created successfully",
+            id: result.insertedId,
+          });
+        } else {
+          res.status(400).json({ message: "Failed to create project" });
+        }
       } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Internal server error" });
@@ -80,9 +87,9 @@ async function run() {
 
         const result = await projectsCollection.updateOne(
           { _id: new ObjectId(id) },
-          { $set: updatedProject, $currentDate: { lastModified: true } }
+          { $set: updatedProject, $currentDate: { createdAt: true } }
         );
-        
+
         if (result.modifiedCount > 0) {
           res.status(200).json({ message: "Project updated successfully" });
         } else {
