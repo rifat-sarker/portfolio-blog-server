@@ -29,6 +29,10 @@ type Blog = {
   category: "Technology" | "Lifestyle" | "Health" | "Education" | "Business";
 };
 
+type Message = {
+  text: string;
+};
+
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const uri = process.env.DB_URI;
 
@@ -49,6 +53,7 @@ async function run() {
     const collection = db.collection("users");
     const projectsCollection: Collection<Project> = db.collection("projects");
     const blogsCollection: Collection<Blog> = db.collection("blogs");
+    const messageCollection: Collection<Message> = db.collection("messages");
 
     // projects crud operation
     // create project
@@ -234,10 +239,49 @@ async function run() {
             .status(200)
             .json({ success: true, message: "Blog deleted successfully" });
         } else {
-          res
-            .status(404)
-            .json({ success: false, message: "Blog not found" });
+          res.status(404).json({ success: false, message: "Blog not found" });
         }
+      } catch (error) {
+        console.error(error);
+        res
+          .status(500)
+          .json({ success: false, message: "Internal server error" });
+      }
+    });
+
+    // message management
+    // send message to db
+    app.post("/api/message", async (req: Request, res: Response) => {
+      try {
+        const result = await messageCollection.insertOne({
+          ...req.body,
+          createdAt: new Date(),
+        });
+        if (result.acknowledged) {
+          res.status(201).json({
+            success: true,
+            message: "Message sent successfully",
+            id: result.insertedId,
+          });
+        } else {
+          res.status(400).json({ message: "Failed to send message" });
+        }
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    });
+
+    //get messages
+    app.get("/api/message", async (req: Request, res: Response) => {
+      try {
+        const messages = await messageCollection.find().toArray();
+
+        res.status(200).json({
+          success: true,
+          message: "Message fetched successfully",
+          data: messages,
+        });
       } catch (error) {
         console.error(error);
         res
