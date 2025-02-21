@@ -10,6 +10,7 @@ const port = process.env.PORT || 5000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // types
 // Define Project interface
@@ -59,6 +60,7 @@ async function run() {
     // create project
     app.post("/api/projects", async (req: Request, res: Response) => {
       try {
+        console.log("Received Data:", req.body); // ✅ Debugging
         const project = { ...req.body, createdAt: new Date() };
         console.log(project);
         const result = await projectsCollection.insertOne(project);
