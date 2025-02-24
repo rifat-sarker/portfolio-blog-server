@@ -60,7 +60,7 @@ async function run() {
     // create project
     app.post("/api/projects", async (req: Request, res: Response) => {
       try {
-        console.log("Received Data:", req.body); // ✅ Debugging
+        // console.log("Received Data:", req.body); 
         const project = { ...req.body, createdAt: new Date() };
         console.log(project);
         const result = await projectsCollection.insertOne(project);
@@ -112,8 +112,12 @@ async function run() {
           { $set: updatedProject, $currentDate: { createdAt: true } }
         );
 
+        console.log("Update result:", result); 
+
         if (result.modifiedCount > 0) {
-          res.status(200).json({ message: "Project updated successfully" });
+          res
+            .status(200)
+            .json({ success: true, message: "Project updated successfully" });
         } else {
           res.status(404).json({ message: "Project not found or no changes" });
         }
